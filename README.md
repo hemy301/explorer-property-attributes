@@ -1,40 +1,46 @@
 # Explorer Property Attributes
 
-Style files in Obsidian's file explorer **by their frontmatter properties** — with plain CSS snippets.
+**See each note's status right in the file list — without opening anything.**
 
-![Demo: setting status to done instantly grays the note out in the file explorer](demo.gif)
+Mark a note as read, done or urgent, and the file explorer shows it instantly: gray it out, add a checkmark, a color, an emoji — whatever you choose.
 
-CSS alone can't see frontmatter. This plugin bridges the gap: it exposes the properties you choose as `data-` attributes on file-explorer items, and keeps them **updated instantly** when a property changes.
+![Demo: clicking the "read" checkbox instantly grays the note out in the file explorer](demo.gif)
 
-## Example: a reading tracker
+## Why
 
-Notes have a `status` property. Mark a note `status: done` and it turns gray with a checkmark in the file explorer — no need to open it to see where you left off.
+Your notes already know their status — it lives in their properties (`read: true`, `status: done`, `priority: high`). But the file explorer hides all of it: every file looks the same, and you end up opening notes just to remember where you left off.
 
-**1.** In the plugin settings, set **Properties** to `status`.
+This plugin brings that information into the file explorer, and keeps it in sync the moment a property changes.
 
-**2.** Add a CSS snippet (Settings → Appearance → CSS snippets):
+## Example: a reading tracker (the GIF above)
+
+**1.** Give your notes a `read` property (a checkbox in the Properties panel).
+
+**2.** In the plugin settings, set **Properties** to `read`.
+
+**3.** Add a CSS snippet (Settings → Appearance → CSS snippets):
 
 ```css
-.nav-file-title-content[data-link-status="done"] {
+.nav-file-title-content[data-link-read="true"] {
   color: var(--text-faint);
 }
 
-.nav-file-title-content[data-link-status="done"]::before {
+.nav-file-title-content[data-link-read="true"]::before {
   content: "✓ ";
   color: var(--color-green);
   font-weight: 700;
 }
 ```
 
-**3.** Toggle `status` in any note's properties — the explorer restyles immediately.
+Click the checkbox in any note — the explorer restyles immediately. Tip: pair it with a plugin like [Meta Bind](https://obsidian.md/plugins?id=obsidian-meta-bind-plugin) to put a "mark as read" toggle at the bottom of each note.
 
-Works with any property and any value: `priority`, `type`, `archived`, non-ASCII names too. List values are joined with spaces, so `[data-link-tags~="project"]`-style selectors work.
+## More ideas
 
-## How it compares to Supercharged Links
+- Paint `priority: high` notes red, or prefix them with 🔥
+- Dim `archived: true` notes
+- Give every `type: meeting` note a 📅 icon
 
-[Supercharged Links](https://github.com/mdelobelle/obsidian_supercharged_links) pioneered this attribute format and also decorates editor links, tab headers and more. This plugin does **one thing**: the file explorer — and fixes the pain point that motivated it: Supercharged Links repaints the explorer only when its DOM is rebuilt (e.g. collapsing a folder), so after editing a property the explorer can show a stale value even across an app reload.
-
-The attribute format is identical (`data-link-<property>`), so CSS snippets written for Supercharged Links keep working unchanged. If you only used Supercharged Links to style the file explorer, this plugin is a drop-in replacement; if you use its other features, both can run side by side.
+Any property works, any value type works (list values are joined with spaces), non-ASCII property names included.
 
 ## Install
 
@@ -42,11 +48,13 @@ The attribute format is identical (`data-link-<property>`), so CSS snippets writ
 
 **Manually:** download `main.js` and `manifest.json` from the [latest release](https://github.com/hemy301/explorer-property-attributes/releases/latest) into `<vault>/.obsidian/plugins/explorer-property-attributes/` and enable the plugin.
 
-## Notes
+## How it works (the technical bit)
 
-- Only markdown files are decorated (they are the only files with frontmatter).
-- Attributes live on `.nav-file-title-content` inside `.nav-file-title[data-path]` elements.
-- The plugin cleans up after itself: attributes are removed when a property is removed from settings or the plugin is disabled.
+CSS alone can't see frontmatter. The plugin exposes the properties you choose as data attributes on file-explorer items — a note with `status: done` gets `data-link-status="done"` on its title element (`.nav-file-title-content`) — and your CSS snippet does the styling.
+
+The attribute format is identical to [Supercharged Links](https://github.com/mdelobelle/obsidian_supercharged_links), so CSS snippets written for it keep working unchanged. The difference: Supercharged Links repaints the explorer only when its DOM is rebuilt (e.g. collapsing a folder), so after editing a property it can show a stale value even across an app reload — this plugin updates instantly on every metadata change, and does only this one job. If you use Supercharged Links for its other features (link styling, tab headers), both can run side by side.
+
+Only markdown files are decorated, and the plugin cleans up after itself: attributes are removed when a property is removed from settings or the plugin is disabled.
 
 ## License
 

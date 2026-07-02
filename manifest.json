@@ -1,9 +1,9 @@
 {
 	"id": "explorer-property-attributes",
 	"name": "Explorer Property Attributes",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"minAppVersion": "1.4.0",
-	"description": "Style files in the file explorer by their frontmatter properties: exposes chosen properties as data attributes for your CSS snippets, updated instantly.",
+	"description": "See note properties at a glance in the file explorer: gray out finished notes, flag urgent ones. Styles files by frontmatter properties via your CSS snippets, updated instantly.",
 	"author": "Maksim Volkov",
 	"authorUrl": "https://github.com/hemy301",
 	"isDesktopOnly": false

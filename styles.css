@@ -8,8 +8,8 @@
 	z-index: var(--layer-cover, 5);
 	display: flex;
 	align-items: center;
-	gap: 18px;
-	padding: 7px 24px;
+	gap: 12px;
+	padding: 8px 24px;
 	background: var(--background-primary);
 	border-top: 1px solid var(--background-modifier-border);
 	font-size: var(--font-ui-small);
@@ -18,17 +18,30 @@
 .epa-footer-toggle {
 	display: flex;
 	align-items: center;
-	gap: 7px;
+	gap: 8px;
+	padding: 5px 16px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 999px;
+	background: var(--interactive-normal);
+	box-shadow: var(--shadow-s, none);
 	cursor: pointer;
-	color: var(--text-muted);
+	color: var(--text-normal);
+	font-weight: 500;
 	user-select: none;
+	transition: background 80ms ease, border-color 80ms ease, color 80ms ease;
+}
+
+.epa-footer-toggle:hover {
+	background: var(--interactive-hover);
+	border-color: var(--background-modifier-border-hover);
+}
+
+.epa-footer-toggle:has(input:checked) {
+	color: var(--color-green);
+	border-color: var(--color-green);
 }
 
 .epa-footer-toggle input[type='checkbox'] {
 	margin: 0;
 	cursor: pointer;
-}
-
-.epa-footer-toggle:hover {
-	color: var(--text-normal);
 }

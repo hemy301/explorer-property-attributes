@@ -2,6 +2,8 @@
 
 Style files in Obsidian's file explorer **by their frontmatter properties** — with plain CSS snippets.
 
+![Demo: setting status to done instantly grays the note out in the file explorer](demo.gif)
+
 CSS alone can't see frontmatter. This plugin bridges the gap: it exposes the properties you choose as `data-` attributes on file-explorer items, and keeps them **updated instantly** when a property changes.
 
 ## Example: a reading tracker

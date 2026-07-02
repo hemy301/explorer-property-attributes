@@ -4,6 +4,8 @@
 
 Mark a note as read, done or urgent, and the file explorer shows it instantly: gray it out, add a checkmark, a color, an emoji — whatever you choose.
 
+And marking is one click too: an optional footer bar pins a checkbox for the property to the bottom of every note that has it, so you never scroll back to the properties panel.
+
 ![Demo: clicking the "read" checkbox instantly grays the note out in the file explorer](demo.gif)
 
 ## Why
@@ -32,7 +34,9 @@ This plugin brings that information into the file explorer, and keeps it in sync
 }
 ```
 
-Click the checkbox in any note — the explorer restyles immediately. Tip: pair it with a plugin like [Meta Bind](https://obsidian.md/plugins?id=obsidian-meta-bind-plugin) to put a "mark as read" toggle at the bottom of each note.
+Click the checkbox in any note — the explorer restyles immediately.
+
+**4.** (Optional) Also set **Note footer toggles** to `read`. Every note that has the `read` property gets a checkbox bar pinned to the bottom of its pane — finish reading, click, done. No plugins needed, no scrolling to the top.
 
 ## More ideas
 
@@ -46,7 +50,7 @@ Any property works, any value type works (list values are joined with spaces), n
 
 **From the community catalog:** Settings → Community plugins → Browse → search for **Explorer Property Attributes**, or use [this link](https://obsidian.md/plugins?id=explorer-property-attributes).
 
-**Manually:** download `main.js` and `manifest.json` from the [latest release](https://github.com/hemy301/explorer-property-attributes/releases/latest) into `<vault>/.obsidian/plugins/explorer-property-attributes/` and enable the plugin.
+**Manually:** download `main.js`, `manifest.json` and `styles.css` from the [latest release](https://github.com/hemy301/explorer-property-attributes/releases/latest) into `<vault>/.obsidian/plugins/explorer-property-attributes/` and enable the plugin.
 
 ## How it works (the technical bit)
 
@@ -54,7 +58,9 @@ CSS alone can't see frontmatter. The plugin exposes the properties you choose as
 
 The attribute format is identical to [Supercharged Links](https://github.com/mdelobelle/obsidian_supercharged_links), so CSS snippets written for it keep working unchanged. The difference: Supercharged Links repaints the explorer only when its DOM is rebuilt (e.g. collapsing a folder), so after editing a property it can show a stale value even across an app reload — this plugin updates instantly on every metadata change, and does only this one job. If you use Supercharged Links for its other features (link styling, tab headers), both can run side by side.
 
-Only markdown files are decorated, and the plugin cleans up after itself: attributes are removed when a property is removed from settings or the plugin is disabled.
+The footer toggles write through Obsidian's own `processFrontMatter`, so the property is updated exactly as if you edited it in the properties panel — no custom syntax in your notes.
+
+Only markdown files are decorated, and the plugin cleans up after itself: attributes and footers are removed when a property is removed from settings or the plugin is disabled.
 
 ## License
 

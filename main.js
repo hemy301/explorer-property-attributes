@@ -16,6 +16,7 @@ const ATTR_PREFIX = 'data-link-';
 
 const DEFAULT_SETTINGS = {
 	properties: [],
+	footerProperties: [],
 };
 
 module.exports = class ExplorerPropertyAttributes extends Plugin {
@@ -33,29 +34,38 @@ module.exports = class ExplorerPropertyAttributes extends Plugin {
 		this.app.workspace.onLayoutReady(() => {
 			this.decorateAll();
 			this.watchExplorers();
+			this.updateFooters();
 		});
 
 		// Instant reaction to property edits (properties pane, plugins, external sync)
-		this.registerEvent(this.app.metadataCache.on('changed', (file) => this.decorateOne(file.path)));
+		this.registerEvent(this.app.metadataCache.on('changed', (file) => {
+			this.decorateOne(file.path);
+			this.updateFooters();
+		}));
 		// Startup indexing can finish after the first paint
 		this.registerEvent(this.app.metadataCache.on('resolved', () => this.decorateAllDebounced()));
 		this.registerEvent(this.app.vault.on('rename', () => this.decorateAllDebounced()));
+		this.registerEvent(this.app.workspace.on('file-open', () => this.updateFooters()));
 		// New explorer leaves can appear (e.g. moved to another split)
 		this.registerEvent(this.app.workspace.on('layout-change', () => {
 			this.watchExplorers();
 			this.decorateAllDebounced();
+			this.updateFooters();
 		}));
 	}
 
 	onunload() {
 		this.disconnectObservers();
 		this.clearAll();
+		this.removeFooters();
 	}
 
 	async saveSettings() {
 		await this.saveData(this.settings);
 		this.clearAll();
 		this.decorateAll();
+		this.removeFooters();
+		this.updateFooters();
 	}
 
 	attrFor(property) {
@@ -132,6 +142,53 @@ module.exports = class ExplorerPropertyAttributes extends Plugin {
 			this.appliedAttrs.forEach((attr) => target.removeAttribute(attr));
 		});
 	}
+
+	/* --- Note footer toggles ---------------------------------------------
+	   A bar pinned to the bottom of each note pane with a checkbox per
+	   configured boolean property, so a note can be marked done/read without
+	   opening the properties panel. Shown only when the note's frontmatter
+	   already has the property with a true/false value. */
+
+	updateFooters() {
+		this.app.workspace.getLeavesOfType('markdown').forEach((leaf) => this.updateFooter(leaf.view));
+	}
+
+	updateFooter(view) {
+		const container = view.contentEl;
+		if (!container) return;
+		let footer = container.querySelector(':scope > .epa-footer');
+		const file = view.file;
+		const frontmatter = file ? this.app.metadataCache.getFileCache(file)?.frontmatter : undefined;
+		const toggles = [];
+		if (frontmatter) {
+			for (const property of this.settings.footerProperties) {
+				if (typeof frontmatter[property] === 'boolean') toggles.push([property, frontmatter[property]]);
+			}
+		}
+		if (toggles.length === 0) {
+			if (footer) footer.remove();
+			return;
+		}
+		if (!footer) footer = container.createDiv({ cls: 'epa-footer' });
+		footer.empty();
+		for (const [property, value] of toggles) {
+			const label = footer.createEl('label', { cls: 'epa-footer-toggle' });
+			const checkbox = label.createEl('input', { attr: { type: 'checkbox' } });
+			checkbox.checked = value;
+			label.createSpan({ text: property });
+			checkbox.addEventListener('change', () => {
+				this.app.fileManager.processFrontMatter(file, (fm) => {
+					fm[property] = checkbox.checked;
+				});
+			});
+		}
+	}
+
+	removeFooters() {
+		this.app.workspace.getLeavesOfType('markdown').forEach((leaf) => {
+			leaf.view.contentEl?.querySelector(':scope > .epa-footer')?.remove();
+		});
+	}
 };
 
 class ExplorerPropertyAttributesSettingTab extends PluginSettingTab {
@@ -157,6 +214,28 @@ class ExplorerPropertyAttributesSettingTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.properties.join(', '))
 					.onChange(async (value) => {
 						this.plugin.settings.properties = value
+							.split(',')
+							.map((s) => s.trim())
+							.filter((s) => s.length > 0);
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName('Note footer toggles')
+			.setDesc(
+				'Comma-separated list of true/false properties to show as checkboxes ' +
+				'in a bar at the bottom of note panes. The bar appears only in notes ' +
+				'that already have the property, and clicking writes straight to the ' +
+				'frontmatter — handy for marking a note read or done without scrolling ' +
+				'to the top.'
+			)
+			.addText((text) =>
+				text
+					.setPlaceholder('read, done')
+					.setValue(this.plugin.settings.footerProperties.join(', '))
+					.onChange(async (value) => {
+						this.plugin.settings.footerProperties = value
 							.split(',')
 							.map((s) => s.trim())
 							.filter((s) => s.length > 0);

@@ -36,11 +36,7 @@ The attribute format is identical (`data-link-<property>`), so CSS snippets writ
 
 ## Install
 
-**Via BRAT** (until the plugin is in the community catalog):
-
-1. Install the [BRAT](https://obsidian.md/plugins?id=obsidian42-brat) plugin.
-2. In BRAT settings: *Add beta plugin* → `hemy301/explorer-property-attributes`.
-3. Enable **Explorer Property Attributes** in Community plugins.
+**From the community catalog:** Settings → Community plugins → Browse → search for **Explorer Property Attributes**, or use [this link](https://obsidian.md/plugins?id=explorer-property-attributes).
 
 **Manually:** download `main.js` and `manifest.json` from the [latest release](https://github.com/hemy301/explorer-property-attributes/releases/latest) into `<vault>/.obsidian/plugins/explorer-property-attributes/` and enable the plugin.
 

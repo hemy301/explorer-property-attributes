@@ -6,7 +6,7 @@ Mark a note as read, done or urgent, and the file explorer shows it instantly: g
 
 And marking is one click too: an optional footer bar pins a checkbox for the property to the bottom of every note that has it, so you never scroll back to the properties panel.
 
-![Demo: clicking the "read" checkbox instantly grays the note out in the file explorer](demo.gif)
+![Demo: clicking the "read" button at the bottom of a note instantly grays it out in the file explorer](demo.gif)
 
 ## Why
 

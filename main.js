@@ -216,8 +216,13 @@ module.exports = class ExplorerPropertyAttributes extends Plugin {
 		const infos = this.app.metadataCache.getAllPropertyInfos?.() || {};
 		const set = new Set();
 		for (const [key, info] of Object.entries(infos)) {
-			if (!info || (info.count ?? 0) <= 0) continue;
-			if (!info.type || info.type === 'checkbox') set.add(key.toLowerCase());
+			if (!info) continue;
+			// Field names differ across Obsidian versions: current builds
+			// return { name, widget, occurrences }, older ones { name, type, count }.
+			const count = info.count ?? info.occurrences ?? 0;
+			const type = info.type ?? info.widget;
+			if (count <= 0) continue;
+			if (!type || type === 'checkbox') set.add(key.toLowerCase());
 		}
 		return set;
 	}

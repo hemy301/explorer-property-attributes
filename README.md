@@ -18,9 +18,9 @@ This plugin brings that information into the file explorer, and keeps it in sync
 
 No configuration needed — just install, enable, and:
 
-**1.** Give a note a `read` property (a checkbox in the Properties panel). `done`, `finished`, `complete`, `archived` and `прочитано` work out of the box too, and the list is editable in the settings.
+**1.** Give any one note a `read` property (a checkbox in the Properties panel). `done`, `finished`, `complete`, `archived` and `прочитано` work out of the box too, and the list is editable in the settings.
 
-**2.** That's it. The note now has a **checkbox bar pinned to the bottom of its pane** (every checkbox property gets one), and while the property is true the note is **grayed out with a green ✓ in the file explorer**. Finish reading, click, done — no scrolling to the top, and the explorer restyles instantly.
+**2.** That's it — for the whole vault. Every note now has a **checkbox bar pinned to the bottom of its pane** (once a done-marker property is used anywhere in the vault, it is offered in every note; the first click creates the property in that note). While the property is true, the note is **grayed out with a green ✓ in the file explorer**. Finish reading, click, done — no scrolling to the top, no per-note setup, and the explorer restyles instantly.
 
 ## Custom styling with CSS snippets
 

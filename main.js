@@ -13,8 +13,12 @@
    Out of the box (no configuration needed):
    - every frontmatter property is exposed as an attribute;
    - every checkbox (boolean) property gets a toggle in the note footer bar;
-   - notes whose read/done/finished/complete/archived/прочитано property is
-     true are grayed out in the explorer with a green checkmark.
+   - done-marker properties (read/done/finished/complete/archived/прочитано)
+     that are already used somewhere in the vault get a footer toggle in
+     EVERY note — clicking creates the property, so nothing has to be
+     configured per note;
+   - notes whose done-marker property is true are grayed out in the explorer
+     with a green checkmark.
    Each of these can be narrowed or turned off in the settings. */
 
 const { Plugin, PluginSettingTab, Setting, debounce } = require('obsidian');
@@ -30,6 +34,10 @@ const DEFAULT_SETTINGS = {
 	// `footerProperties`.
 	footerAllBooleans: true,
 	footerProperties: [],
+	// Footer offers the done-marker properties (see `doneProperties`) that
+	// are used somewhere in the vault in every note, even before the note
+	// has the property; clicking the toggle creates it.
+	footerEverywhere: true,
 	// Built-in styling: gray out a note when any of these boolean properties
 	// is true (matched case-insensitively). Cleared = no built-in styling.
 	doneProperties: ['read', 'done', 'finished', 'complete', 'archived', 'прочитано'],
@@ -44,6 +52,7 @@ module.exports = class ExplorerPropertyAttributes extends Plugin {
 		if (data && data.allProperties === undefined) {
 			this.settings.allProperties = false;
 			this.settings.footerAllBooleans = false;
+			this.settings.footerEverywhere = false;
 			this.settings.doneProperties = [];
 		}
 		this.observers = [];
@@ -199,16 +208,45 @@ module.exports = class ExplorerPropertyAttributes extends Plugin {
 	   the properties panel. Shown only when the note's frontmatter already
 	   has a property with a true/false value. */
 
+	// Checkbox properties that exist somewhere in the vault, so a done-marker
+	// can be offered in notes that do not have the property yet. Properties
+	// with no assigned/inferred type are included: the type may simply not be
+	// registered (e.g. the property was written by a script).
+	vaultCheckboxProps() {
+		const infos = this.app.metadataCache.getAllPropertyInfos?.() || {};
+		const set = new Set();
+		for (const [key, info] of Object.entries(infos)) {
+			if (!info || (info.count ?? 0) <= 0) continue;
+			if (!info.type || info.type === 'checkbox') set.add(key.toLowerCase());
+		}
+		return set;
+	}
+
 	footerTogglesFor(frontmatter) {
-		if (!frontmatter) return [];
+		const fm = frontmatter || {};
+		const seen = new Set();
 		const toggles = [];
+		const add = (property, value) => {
+			const key = property.toLowerCase();
+			if (seen.has(key)) return;
+			seen.add(key);
+			toggles.push([property, value]);
+		};
 		if (this.settings.footerAllBooleans) {
-			for (const [property, value] of Object.entries(frontmatter)) {
-				if (typeof value === 'boolean') toggles.push([property, value]);
+			for (const [property, value] of Object.entries(fm)) {
+				if (typeof value === 'boolean') add(property, value);
 			}
 		} else {
 			for (const property of this.settings.footerProperties) {
-				if (typeof frontmatter[property] === 'boolean') toggles.push([property, frontmatter[property]]);
+				if (typeof fm[property] === 'boolean') add(property, fm[property]);
+			}
+		}
+		// Done-markers used in the vault are offered even when the note does
+		// not have the property yet; the first click creates it.
+		if (this.settings.footerEverywhere) {
+			const vaultProps = this.vaultCheckboxProps();
+			for (const property of this.settings.doneProperties) {
+				if (vaultProps.has(property.toLowerCase())) add(property, fm[property] === true);
 			}
 		}
 		return toggles;
@@ -224,7 +262,7 @@ module.exports = class ExplorerPropertyAttributes extends Plugin {
 		let footer = container.querySelector(':scope > .epa-footer');
 		const file = view.file;
 		const frontmatter = file ? this.app.metadataCache.getFileCache(file)?.frontmatter : undefined;
-		const toggles = this.footerTogglesFor(frontmatter);
+		const toggles = file ? this.footerTogglesFor(frontmatter) : [];
 		if (toggles.length === 0) {
 			if (footer) footer.remove();
 			return;
@@ -306,6 +344,21 @@ class ExplorerPropertyAttributesSettingTab extends PluginSettingTab {
 						this.plugin.settings.properties = splitList(value);
 						await this.plugin.saveSettings();
 					})
+			);
+
+		new Setting(containerEl)
+			.setName('Offer marking in every note')
+			.setDesc(
+				'The finished-note properties above that are already used somewhere ' +
+				'in the vault get a footer toggle in every note, even before the ' +
+				'note has the property — the first click creates it. Mark one note ' +
+				'once, and any note can be marked with one click.'
+			)
+			.addToggle((toggle) =>
+				toggle.setValue(this.plugin.settings.footerEverywhere).onChange(async (value) => {
+					this.plugin.settings.footerEverywhere = value;
+					await this.plugin.saveSettings();
+				})
 			);
 
 		new Setting(containerEl)

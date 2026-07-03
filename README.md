@@ -1,4 +1,6 @@
-# Explorer Property Attributes
+# Mark as Read
+
+*(formerly Explorer Property Attributes — the plugin id is unchanged, existing installs keep updating)*
 
 **See each note's status right in the file list — without opening anything.**
 
@@ -46,7 +48,7 @@ Any property works, any value type works (list values are joined with spaces), n
 
 ## Install
 
-**From the community catalog:** Settings → Community plugins → Browse → search for **Explorer Property Attributes**, or use [this link](https://obsidian.md/plugins?id=explorer-property-attributes).
+**From the community catalog:** Settings → Community plugins → Browse → search for **Mark as Read**, or use [this link](https://obsidian.md/plugins?id=explorer-property-attributes).
 
 **Manually:** download `main.js`, `manifest.json` and `styles.css` from the [latest release](https://github.com/hemy301/explorer-property-attributes/releases/latest) into `<vault>/.obsidian/plugins/explorer-property-attributes/` and enable the plugin.
 

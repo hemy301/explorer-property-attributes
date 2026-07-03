@@ -1,4 +1,5 @@
-/* Explorer Property Attributes
+/* Mark as Read (formerly Explorer Property Attributes; the plugin id is
+   unchanged: explorer-property-attributes)
    Exposes frontmatter properties as data attributes on file-explorer items,
    so CSS snippets can style notes by property values.
 

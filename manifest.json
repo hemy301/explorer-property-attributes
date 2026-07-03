@@ -1,9 +1,9 @@
 {
 	"id": "explorer-property-attributes",
-	"name": "Explorer Property Attributes",
-	"version": "1.3.1",
+	"name": "Mark as Read",
+	"version": "1.3.2",
 	"minAppVersion": "1.4.0",
-	"description": "See note properties at a glance in the file explorer: gray out finished notes, flag urgent ones. Works out of the box; style anything by frontmatter properties via CSS snippets, updated instantly.",
+	"description": "Mark a note read or done with one click and see it in the file explorer: finished notes are grayed out with a checkmark. Any frontmatter property can style files via CSS snippets, updated instantly.",
 	"author": "Maksim Volkov",
 	"authorUrl": "https://github.com/hemy301",
 	"isDesktopOnly": false

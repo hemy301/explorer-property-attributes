@@ -14,37 +14,35 @@ Your notes already know their status — it lives in their properties (`read: tr
 
 This plugin brings that information into the file explorer, and keeps it in sync the moment a property changes.
 
-## Example: a reading tracker (the GIF above)
+## Quick start: a reading tracker (the GIF above)
 
-**1.** Give your notes a `read` property (a checkbox in the Properties panel).
+No configuration needed — just install, enable, and:
 
-**2.** In the plugin settings, set **Properties** to `read`.
+**1.** Give a note a `read` property (a checkbox in the Properties panel). `done`, `finished`, `complete`, `archived` and `прочитано` work out of the box too, and the list is editable in the settings.
 
-**3.** Add a CSS snippet (Settings → Appearance → CSS snippets):
+**2.** That's it. The note now has a **checkbox bar pinned to the bottom of its pane** (every checkbox property gets one), and while the property is true the note is **grayed out with a green ✓ in the file explorer**. Finish reading, click, done — no scrolling to the top, and the explorer restyles instantly.
+
+## Custom styling with CSS snippets
+
+Every frontmatter property is also exposed as a `data-link-<name>` attribute on the note's file-explorer item, so any styling beyond the built-in graying is one CSS snippet away (Settings → Appearance → CSS snippets):
 
 ```css
-.nav-file-title-content[data-link-read="true"] {
-  color: var(--text-faint);
+/* Paint high-priority notes red and prefix them with 🔥 */
+.nav-file-title-content[data-link-priority="high"] {
+  color: var(--color-red);
 }
 
-.nav-file-title-content[data-link-read="true"]::before {
-  content: "✓ ";
-  color: var(--color-green);
-  font-weight: 700;
+.nav-file-title-content[data-link-priority="high"]::before {
+  content: "🔥 ";
 }
 ```
 
-Click the checkbox in any note — the explorer restyles immediately.
+More ideas:
 
-**4.** (Optional) Also set **Note footer toggles** to `read`. Every note that has the `read` property gets a checkbox bar pinned to the bottom of its pane — finish reading, click, done. No plugins needed, no scrolling to the top.
-
-## More ideas
-
-- Paint `priority: high` notes red, or prefix them with 🔥
-- Dim `archived: true` notes
+- Dim `status: someday` notes
 - Give every `type: meeting` note a 📅 icon
 
-Any property works, any value type works (list values are joined with spaces), non-ASCII property names included.
+Any property works, any value type works (list values are joined with spaces), non-ASCII property names included. The settings let you limit which properties are exposed and which get footer toggles.
 
 ## Install
 

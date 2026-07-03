@@ -1,3 +1,16 @@
+/* Built-in styling for finished notes (the "Gray out finished notes"
+   plugin setting): grayed out with a green checkmark. */
+
+.nav-file-title.epa-done .nav-file-title-content {
+	color: var(--text-faint);
+}
+
+.nav-file-title.epa-done .nav-file-title-content::before {
+	content: '✓ ';
+	color: var(--color-green);
+	font-weight: 700;
+}
+
 /* Note footer toggles (the "Note footer toggles" plugin setting) */
 
 .epa-footer {

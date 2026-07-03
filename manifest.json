@@ -1,9 +1,9 @@
 {
 	"id": "explorer-property-attributes",
 	"name": "Explorer Property Attributes",
-	"version": "1.1.1",
+	"version": "1.2.0",
 	"minAppVersion": "1.4.0",
-	"description": "See note properties at a glance in the file explorer: gray out finished notes, flag urgent ones. Styles files by frontmatter properties via your CSS snippets, updated instantly.",
+	"description": "See note properties at a glance in the file explorer: gray out finished notes, flag urgent ones. Works out of the box; style anything by frontmatter properties via CSS snippets, updated instantly.",
 	"author": "Maksim Volkov",
 	"authorUrl": "https://github.com/hemy301",
 	"isDesktopOnly": false

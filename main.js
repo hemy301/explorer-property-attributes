@@ -14,15 +14,15 @@
    Out of the box (no configuration needed):
    - every frontmatter property is exposed as an attribute;
    - every checkbox (boolean) property gets a toggle in the note footer bar;
-   - done-marker properties (read/done/finished/complete/archived/прочитано)
-     that are already used somewhere in the vault get a footer toggle in
-     EVERY note — clicking creates the property, so nothing has to be
-     configured per note;
+   - EVERY note gets a footer toggle for the done-marker properties
+     (read/done/finished/complete/archived/прочитано) used in the vault, or
+     for `read` when none is used yet — clicking creates the property, so
+     nothing has to be configured per note;
    - notes whose done-marker property is true are grayed out in the explorer
      with a green checkmark.
    Each of these can be narrowed or turned off in the settings. */
 
-const { Plugin, PluginSettingTab, Setting, debounce } = require('obsidian');
+const { Notice, Plugin, PluginSettingTab, Setting, debounce } = require('obsidian');
 
 const ATTR_PREFIX = 'data-link-';
 const DONE_CLASS = 'epa-done';
@@ -36,8 +36,9 @@ const DEFAULT_SETTINGS = {
 	footerAllBooleans: true,
 	footerProperties: [],
 	// Footer offers the done-marker properties (see `doneProperties`) that
-	// are used somewhere in the vault in every note, even before the note
-	// has the property; clicking the toggle creates it.
+	// are used somewhere in the vault — or the first of them when none is —
+	// in every note, even before the note has the property; clicking the
+	// toggle creates it.
 	footerEverywhere: true,
 	// Built-in styling: gray out a note when any of these boolean properties
 	// is true (matched case-insensitively). Cleared = no built-in styling.
@@ -73,8 +74,13 @@ module.exports = class ExplorerPropertyAttributes extends Plugin {
 			this.decorateOne(file.path);
 			this.updateFooters();
 		}));
-		// Startup indexing can finish after the first paint
-		this.registerEvent(this.app.metadataCache.on('resolved', () => this.decorateAllDebounced()));
+		// Startup indexing can finish after the first paint (the footer's
+		// choice of done-markers depends on the vault-wide property index too)
+		this.updateFootersDebounced = debounce(() => this.updateFooters(), 100, true);
+		this.registerEvent(this.app.metadataCache.on('resolved', () => {
+			this.decorateAllDebounced();
+			this.updateFootersDebounced();
+		}));
 		this.registerEvent(this.app.vault.on('rename', () => this.decorateAllDebounced()));
 		this.registerEvent(this.app.workspace.on('file-open', () => this.updateFooters()));
 		// New explorer leaves can appear (e.g. moved to another split)
@@ -86,6 +92,9 @@ module.exports = class ExplorerPropertyAttributes extends Plugin {
 	}
 
 	onunload() {
+		// A pending debounced call would redecorate right after the cleanup
+		this.decorateAllDebounced?.cancel();
+		this.updateFootersDebounced?.cancel();
 		this.disconnectObservers();
 		this.clearAll();
 		this.removeFooters();
@@ -159,8 +168,8 @@ module.exports = class ExplorerPropertyAttributes extends Plugin {
 		if (!path || !path.endsWith('.md')) return;
 		const target = el.querySelector('.nav-file-title-content');
 		if (!target) return;
-		const file = this.app.vault.getFileByPath(path);
-		const frontmatter = file ? this.app.metadataCache.getFileCache(file)?.frontmatter : undefined;
+		// getCache by path rather than Vault.getFileByPath, which needs 1.5.7
+		const frontmatter = this.app.metadataCache.getCache(path)?.frontmatter;
 		const attrs = {};
 		for (const property of this.propertiesFor(frontmatter)) {
 			const value = this.formatValue(frontmatter ? frontmatter[property] : undefined);
@@ -206,26 +215,34 @@ module.exports = class ExplorerPropertyAttributes extends Plugin {
 	/* --- Note footer toggles ---------------------------------------------
 	   A bar pinned to the bottom of each note pane with a checkbox per
 	   boolean property, so a note can be marked done/read without opening
-	   the properties panel. Shown only when the note's frontmatter already
+	   the properties panel. Shown in every note while "Offer marking in
+	   every note" is on; otherwise only when the note's frontmatter already
 	   has a property with a true/false value. */
 
-	// Checkbox properties that exist somewhere in the vault, so a done-marker
-	// can be offered in notes that do not have the property yet. Properties
-	// with no assigned/inferred type are included: the type may simply not be
-	// registered (e.g. the property was written by a script).
-	vaultCheckboxProps() {
-		const infos = this.app.metadataCache.getAllPropertyInfos?.() || {};
-		const set = new Set();
+	// Properties known to the vault (lowercased name → { name, type }), so a
+	// done-marker can be offered in notes that do not have the property yet.
+	// The type is undefined when none is assigned/inferred: it may simply
+	// not be registered (e.g. the property was written by a script).
+	vaultProperties() {
+		// Current builds keep the index on the (undocumented)
+		// metadataTypeManager; the older metadataCache.getAllPropertyInfos is
+		// deprecated there and logs an error on every call.
+		const manager = this.app.metadataTypeManager;
+		const infos = (manager?.getAllProperties
+			? manager.getAllProperties()
+			: this.app.metadataCache.getAllPropertyInfos?.()) || {};
+		const props = new Map();
 		for (const [key, info] of Object.entries(infos)) {
 			if (!info) continue;
-			// Field names differ across Obsidian versions: current builds
-			// return { name, widget, occurrences }, older ones { name, type, count }.
-			const count = info.count ?? info.occurrences ?? 0;
-			const type = info.type ?? info.widget;
-			if (count <= 0) continue;
-			if (!type || type === 'checkbox') set.add(key.toLowerCase());
+			// The shape differs across Obsidian versions: { name, type, count },
+			// then { name, widget, occurrences }, now { name, widget } with no
+			// count — every entry is then a property in use or with an
+			// assigned type.
+			const count = info.count ?? info.occurrences;
+			if (typeof count === 'number' && count <= 0) continue;
+			props.set(key.toLowerCase(), { name: info.name || key, type: info.type ?? info.widget });
 		}
-		return set;
+		return props;
 	}
 
 	footerTogglesFor(frontmatter) {
@@ -244,15 +261,29 @@ module.exports = class ExplorerPropertyAttributes extends Plugin {
 			}
 		} else {
 			for (const property of this.settings.footerProperties) {
-				if (typeof fm[property] === 'boolean') add(property, fm[property]);
+				const key = frontmatterKey(fm, property);
+				if (key !== undefined && typeof fm[key] === 'boolean') add(key, fm[key]);
 			}
 		}
 		// Done-markers used in the vault are offered even when the note does
-		// not have the property yet; the first click creates it.
+		// not have the property yet; the first click creates it. In a vault
+		// where none is used yet, the first marker that is not taken by a
+		// non-checkbox property is offered, so every note has a toggle right
+		// after install.
 		if (this.settings.footerEverywhere) {
-			const vaultProps = this.vaultCheckboxProps();
-			for (const property of this.settings.doneProperties) {
-				if (vaultProps.has(property.toLowerCase())) add(property, fm[property] === true);
+			const vault = this.vaultProperties();
+			let offered = this.settings.doneProperties.filter((p) => {
+				const info = vault.get(p.toLowerCase());
+				return info && (!info.type || info.type === 'checkbox');
+			});
+			if (offered.length === 0) {
+				offered = this.settings.doneProperties.filter((p) => !vault.has(p.toLowerCase())).slice(0, 1);
+			}
+			for (const marker of offered) {
+				// Keep the spelling the note (or else the vault) already uses,
+				// so a click never adds a second `Read` next to `read`
+				const property = frontmatterKey(fm, marker) ?? vault.get(marker.toLowerCase())?.name ?? marker;
+				add(property, fm[property] === true);
 			}
 		}
 		return toggles;
@@ -273,17 +304,35 @@ module.exports = class ExplorerPropertyAttributes extends Plugin {
 			if (footer) footer.remove();
 			return;
 		}
+		// Metadata updates arrive while typing in any note: when the note and
+		// its set of toggles are unchanged, only sync the checkboxes instead
+		// of rebuilding, so the footer keeps its focus and hover state.
+		const key = JSON.stringify([file.path, toggles.map(([property]) => property)]);
+		if (footer && footer.dataset.key === key) {
+			footer.querySelectorAll('input').forEach((checkbox, i) => {
+				checkbox.checked = toggles[i][1];
+			});
+			return;
+		}
 		if (!footer) footer = container.createDiv({ cls: 'epa-footer' });
 		footer.empty();
+		footer.dataset.key = key;
 		for (const [property, value] of toggles) {
 			const label = footer.createEl('label', { cls: 'epa-footer-toggle' });
 			const checkbox = label.createEl('input', { attr: { type: 'checkbox' } });
 			checkbox.checked = value;
 			label.createSpan({ text: property });
-			checkbox.addEventListener('change', () => {
-				this.app.fileManager.processFrontMatter(file, (fm) => {
-					fm[property] = checkbox.checked;
-				});
+			checkbox.addEventListener('change', async () => {
+				const checked = checkbox.checked;
+				try {
+					await this.app.fileManager.processFrontMatter(file, (fm) => {
+						fm[property] = checked;
+					});
+				} catch (e) {
+					// E.g. malformed YAML: show the real state, not the click
+					checkbox.checked = !checked;
+					new Notice(`Mark as Read: could not update "${property}" in ${file.basename}: ${e.message}`);
+				}
 			});
 		}
 	}
@@ -355,10 +404,10 @@ class ExplorerPropertyAttributesSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName('Offer marking in every note')
 			.setDesc(
-				'The finished-note properties above that are already used somewhere ' +
-				'in the vault get a footer toggle in every note, even before the ' +
-				'note has the property — the first click creates it. Mark one note ' +
-				'once, and any note can be marked with one click.'
+				'Every note gets a footer toggle for the finished-note properties ' +
+				'above that are used in the vault (or for the first of them when ' +
+				'none is used yet), even before the note has the property — the ' +
+				'first click creates it.'
 			)
 			.addToggle((toggle) =>
 				toggle.setValue(this.plugin.settings.footerEverywhere).onChange(async (value) => {
@@ -398,6 +447,14 @@ class ExplorerPropertyAttributesSettingTab extends PluginSettingTab {
 					})
 			);
 	}
+}
+
+// The note's own key for `property`: an exact match, else a case-insensitive
+// one (Obsidian treats property names case-insensitively, YAML does not).
+function frontmatterKey(frontmatter, property) {
+	if (Object.prototype.hasOwnProperty.call(frontmatter, property)) return property;
+	const lower = property.toLowerCase();
+	return Object.keys(frontmatter).find((key) => key.toLowerCase() === lower);
 }
 
 function splitList(value) {

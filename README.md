@@ -4,17 +4,17 @@
 
 ![Demo: clicking the "read" button at the bottom of a note instantly grays it out in the file explorer](demo.gif)
 
-Your notes already know their status — it lives in their properties (`read: true`, `status: done`, `priority: high`) — but the file explorer hides it. This plugin shows it right there: gray out finished notes, add a checkmark, a color, an emoji. And marking is one click too: an optional footer bar pins the checkbox to the bottom of the note, so you never scroll back to the properties panel.
+Your notes already know their status — it lives in their properties (`read: true`, `status: done`, `priority: high`) — but the file explorer hides it. This plugin shows it right there: gray out finished notes, add a checkmark, a color, an emoji. And marking is one click too: a button pinned to the bottom of every note, so you never scroll back to the properties panel.
 
 ## Quick start: a reading tracker (the GIF above)
 
-No configuration needed — install, enable, and:
+No configuration needed — install and enable. Right away, in every note of the vault:
 
-1. Give any one note a `read` checkbox property. (`done`, `finished`, `complete`, `archived` and `прочитано` work too; the list is editable in settings.)
-2. That's it — for the whole vault:
-   - every note now has a **checkbox bar pinned to the bottom of its pane** (the first click creates the property in that note);
-   - while the property is true, the note is **grayed out with a green ✓** in the file explorer;
-   - finish reading, click, done — the explorer restyles instantly.
+- a **`read` button is pinned to the bottom of the pane** (the first click creates the property in that note);
+- while the property is true, the note is **grayed out with a green ✓** in the file explorer;
+- finish reading, click, done — the explorer restyles instantly.
+
+Prefer `done`, `finished`, `complete`, `archived` or `прочитано`? Use any of them in a note and the button switches to it everywhere; the list is editable in settings.
 
 ## Custom styling with CSS snippets
 
